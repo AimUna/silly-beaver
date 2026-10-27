@@ -1,106 +1,121 @@
 <!doctype html>
 <html>
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Silly Beaver V0.2</title>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f5c15c">
+<title>Silly Beaver V0.3</title>
 <style>
-body{font-family:system-ui;margin:0;background:#fff8ed;color:#2f2a26}.app{max-width:560px;margin:auto;padding:14px}
-.card{background:#fff;border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 10px 24px #0001}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.wide{grid-column:1/-1}
-button,select{font:inherit}button{border:0;border-radius:16px;padding:14px;font-weight:800}
-.mode{background:#f5eee4;text-align:left}.mode.active{outline:3px solid #f3bf55;background:#fff6d9}
-.primary{background:#f3bf55}.blue{background:#7faed7;color:#fff}.green{background:#7eb99a;color:#fff}.white{background:#fff;box-shadow:0 4px 12px #0001}
-video{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:18px;background:#dde4e4}
-.hidden{display:none!important}.small{font-size:13px;color:#746d67;line-height:1.4}
-#beaverLine{font-size:24px;font-weight:900;line-height:1.15}.chip{display:inline-block;background:#eee8df;border-radius:99px;padding:6px 9px;margin:5px 5px 0 0;font-size:12px}
+body{margin:0;background:#fff8ed;font-family:system-ui,-apple-system,sans-serif;color:#2f2a26}
+.app{max-width:560px;margin:auto;padding:14px}.card{background:#fff;border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 10px 26px #0001}
+button{font:inherit;border:0;border-radius:16px;padding:14px;font-weight:850;font-size:16px;width:100%}
+.blue{background:#7eaed8;color:#fff}.yellow{background:#f5c15c}.white{background:#fff;box-shadow:0 4px 12px #0001}
+.status{padding:10px 12px;border-radius:14px;background:#f4f5f4;margin-top:8px;font-size:14px;line-height:1.4}
+.meter{height:18px;background:#eee;border-radius:99px;overflow:hidden;margin-top:8px}
+#meterBar{height:100%;width:0%;background:#7fbb9b;transition:width .06s linear}
+.small{font-size:13px;line-height:1.4;color:#746d67}
 </style>
 </head>
-<body><div class="app">
-<section id="setup">
-<h1>🦫 Silly Beaver V0.2</h1><p class="small">Teacher chooses a mode first. Child experience is intended to be screen-free.</p>
-<div class="card">
-<h3>Choose thinking mode</h3>
-<div class="grid">
-<button class="mode active" data-mode="notice">🔎 <b>Look Closely</b><br><span class="small">Observe + describe</span></button>
-<button class="mode" data-mode="mistake">🐛 <b>Oops, Beaver!</b><br><span class="small">Catch mistakes</span></button>
-<button class="mode" data-mode="predict">🔮 <b>Predict First</b><br><span class="small">Think before checking</span></button>
-<button class="mode" data-mode="convince">💬 <b>Convince Beaver</b><br><span class="small">Explain + justify</span></button>
-</div>
-<label><p><b>Mission set</b></p></label>
-<select id="set"><option value="classroom">Classroom</option><option value="home">Home</option><option value="movement">Movement & properties</option><option value="mixed">Mixed thinking</option></select>
-<button class="primary wide" id="start" style="margin-top:14px;width:100%">Start Beaver</button>
-</div>
-</section>
+<body>
+<div class="app">
+<h1>🦫 Silly Beaver V0.3</h1>
+<p class="small">Microphone diagnostics first, so we can tell if the issue is permission, audio input, or browser speech recognition.</p>
 
-<section id="play" class="hidden">
 <div class="card">
-<video id="cam" autoplay muted playsinline></video>
-<p id="beaverLine">Ready to think?</p>
-<p id="mission"><b>Mission:</b></p>
+<h3>1. Test microphone input</h3>
+<button id="micTest" class="blue">🎤 Test microphone</button>
+<div id="micStatus" class="status">Not tested yet.</div>
+<div class="meter"><div id="meterBar"></div></div>
+<p class="small">Speak normally. If the green bar moves, your microphone is working.</p>
 </div>
-<div class="grid">
-<button class="white" id="look">👀 Beaver, look!</button>
-<button class="blue" id="listen">🎤 I want to answer</button>
-<button class="green wide" id="next">Next challenge →</button>
-</div>
+
 <div class="card">
-<h3>Teacher debug</h3>
-<div id="heard">Nothing heard yet.</div><div id="objects"></div>
-<div class="grid" style="margin-top:10px">
-<button class="white" data-log="reason">✓ Reason</button>
-<button class="white" data-log="persist">✓ Tried again</button>
-<button class="white" data-log="challenge">✓ Challenged Beaver</button>
-<button class="white" data-log="test">✓ Proposed test</button>
+<h3>2. Test speech-to-text</h3>
+<button id="speechTest" class="yellow">🗣️ Test transcription</button>
+<div id="speechStatus" class="status">Not tested yet.</div>
+<p class="small">Try saying: “This is a pencil because we use it to draw.”</p>
 </div>
-<p class="small" id="stats">Prediction 0 · Reason 0 · Challenge 0 · Persist 0 · Test 0</p>
-<button class="white" id="back">Back to setup</button>
+
+<div class="card">
+<h3>3. Browser support</h3>
+<div id="supportStatus" class="status"></div>
 </div>
-</section>
 </div>
 
 <script>
-let mode='notice',model=null,stream=null,prediction='',last=null;
-let stats={predict:0,reason:0,challenge:0,persist:0,test:0};
-const missions={
-classroom:["Find something used for drawing.","Find something that opens and closes.","Find two things that belong together.","Find something with more than one part.","Find something useful that is not a toy."],
-home:["Find something soft.","Find something round.","Find something used every day.","Find something that can hold another object.","Find something that makes a sound."],
-movement:["Find something that can roll.","Find something that can bend.","Find something that can stand by itself.","Find something that can move without wheels.","Find two things and predict which is heavier."],
-mixed:["Find two things that are the same in one way but different in another.","Find something that might confuse Beaver.","Find something you can describe in two ways.","Find something you could test with an experiment.","Find something that does not belong with the others."]
-};
-const $=s=>document.querySelector(s);
-function speak(t){$('#beaverLine').textContent=t;if('speechSynthesis'in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.rate=.92;u.pitch=1.08;speechSynthesis.speak(u)}}
-function mission(){let a=missions[$('#set').value];$('#mission').innerHTML='<b>Mission:</b> '+a[Math.floor(Math.random()*a.length)]}
-function showStats(){$('#stats').textContent=`Prediction ${stats.predict} · Reason ${stats.reason} · Challenge ${stats.challenge} · Persist ${stats.persist} · Test ${stats.test}`}
-function bump(k){stats[k]++;showStats()}
-async function boot(){
-stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
-$('#cam').srcObject=stream;await $('#cam').play();model=await cocoSsd.load({base:'lite_mobilenet_v2'});mission();speak("Ready! Let's think together.");
+const $ = s => document.querySelector(s);
+let micStream=null, audioCtx=null, analyser=null, raf=null;
+
+function updateSupport(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const gum = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  $('#supportStatus').innerHTML =
+    'getUserMedia: <b>'+(gum?'available':'NOT available')+'</b><br>'+
+    'SpeechRecognition: <b>'+(SR?'available':'NOT available')+'</b><br>'+
+    'Secure context: <b>'+(window.isSecureContext?'yes':'no')+'</b>';
 }
-function wrong(c){let p=['banana','book','cup','dog','chair','apple','ball','bottle','teddy bear','car'].filter(x=>x!==c);return p[Math.floor(Math.random()*p.length)]}
-async function see(){
-if(!model)return;$('#objects').innerHTML='';let r=(await model.detect($('#cam'),8,.35)).sort((a,b)=>b.score-a.score);
-r.slice(0,4).forEach(x=>$('#objects').innerHTML+=`<span class=chip>${x.class} ${Math.round(x.score*100)}%</span>`);
-if(!r.length){last=null;speak("Hmm... I'm not sure. Move it closer and let me try again.");return}
-last=r[0].class;
-if(mode==='notice')speak(`I think I see a ${last}. What did YOU notice that helped you decide?`);
-if(mode==='mistake')speak(`Aha! That's definitely a ${wrong(last)}! ...Wait. Am I being a silly beaver?`);
-if(mode==='predict'){if(!prediction){speak("No peeking yet! Tell me what YOU think it is first.");return}else{bump('predict');speak(`You predicted ${prediction}. My eyes think ${last}. How could we check?`);prediction=''}}
-if(mode==='convince')speak(`My guess is ${last}. Convince me. What clues make that answer strong or weak?`);
+updateSupport();
+
+async function testMic(){
+  $('#micStatus').textContent='Requesting microphone permission…';
+  try{
+    if(micStream) micStream.getTracks().forEach(t=>t.stop());
+    micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    $('#micStatus').textContent='✅ Microphone permission granted. Speak now.';
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const src=audioCtx.createMediaStreamSource(micStream);
+    analyser=audioCtx.createAnalyser();
+    analyser.fftSize=256;
+    src.connect(analyser);
+    const data=new Uint8Array(analyser.frequencyBinCount);
+    const draw=()=>{
+      analyser.getByteFrequencyData(data);
+      const avg=data.reduce((a,b)=>a+b,0)/data.length;
+      $('#meterBar').style.width=Math.min(100,avg*1.8)+'%';
+      raf=requestAnimationFrame(draw);
+    };
+    draw();
+  }catch(e){
+    $('#micStatus').textContent='❌ Microphone test failed: '+e.name+' — '+e.message;
+  }
 }
-function hear(){
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){$('#heard').textContent='Speech recognition not supported in this browser.';return}
-let r=new SR();r.lang='en-US';r.interimResults=false;r.maxAlternatives=1;speak("I'm listening.");r.start();
-r.onresult=e=>{let t=e.results[0][0].transcript.trim();$('#heard').textContent=t;let low=t.toLowerCase();
-if(mode==='predict'&&!last){prediction=t;speak(`You think ${t}. Good — you thought first. Now let me look.`);return}
-if(['because','think','notice','see','has','shape','color','same','different'].some(w=>low.includes(w))){bump('reason');speak("I heard your reason! What could we test next?")}else speak("Interesting. Why do you think that?");
-if(['no','wrong','not'].some(w=>low.includes(w)))bump('challenge');if(['test','try','check'].some(w=>low.includes(w)))bump('test');
-}}
-document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{document.querySelectorAll('.mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode});
-$('#start').onclick=async()=>{$('#setup').classList.add('hidden');$('#play').classList.remove('hidden');await boot()};
-$('#look').onclick=see;$('#listen').onclick=hear;$('#next').onclick=()=>{last=null;prediction='';mission();speak(mode==='mistake'?"I might make a silly mistake. Catch me!":mode==='predict'?"Think first. Then let Beaver check.":mode==='convince'?"Convince me with clues.":"Look carefully. What do you notice?")};
-document.querySelectorAll('[data-log]').forEach(b=>b.onclick=()=>bump(b.dataset.log));
-$('#back').onclick=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());$('#play').classList.add('hidden');$('#setup').classList.remove('hidden')};
+
+function testSpeech(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    $('#speechStatus').textContent='❌ SpeechRecognition is not available in this browser.';
+    return;
+  }
+  const r=new SR();
+  r.lang='en-US';
+  r.interimResults=false;
+  r.maxAlternatives=1;
+  r.continuous=false;
+
+  $('#speechStatus').textContent='🎤 Listening…';
+  try{r.start()}catch(e){
+    $('#speechStatus').textContent='❌ Could not start recognition: '+e.name+' — '+e.message;
+    return;
+  }
+  r.onaudiostart=()=>$('#speechStatus').textContent='🎤 Audio input started. Speak now.';
+  r.onspeechstart=()=>$('#speechStatus').textContent='🗣️ Speech detected…';
+  r.onresult=e=>{
+    const t=e.results[0][0].transcript.trim();
+    $('#speechStatus').textContent='✅ Heard: “'+t+'”';
+  };
+  r.onerror=e=>{
+    $('#speechStatus').textContent='❌ Speech recognition error: '+e.error+(e.message?' — '+e.message:'');
+  };
+  r.onend=()=>{
+    const t=$('#speechStatus').textContent;
+    if(t.startsWith('🎤')||t.startsWith('🗣️')){
+      $('#speechStatus').textContent=t+' Recognition ended without a transcript.';
+    }
+  };
+}
+
+$('#micTest').onclick=testMic;
+$('#speechTest').onclick=testSpeech;
 </script>
-</body></html>
+</body>
+</html>

@@ -1,20 +1,13 @@
-# Silly Beaver V0.3
+# Silly Beaver V0.4
 
-This diagnostic version separates:
-1. microphone permission/input
-2. browser speech-to-text support
+The V0.3 microphone diagnostic left its getUserMedia audio stream running.
+V0.4 automatically releases the microphone before starting browser SpeechRecognition.
 
-## Update GitHub Pages
-Replace your existing `index.html` with this one and commit the change.
+## Test sequence
+1. Tap Test microphone.
+2. Speak for 4 seconds.
+3. Wait for: "Microphone works and has been released."
+4. Tap Test transcription.
+5. Speak a full sentence immediately.
 
-## What the results mean
-- Green audio bar moves, but transcription fails:
-  microphone is fine; browser speech recognition is the problem.
-- Green bar does not move:
-  microphone permission/input issue.
-- `not-allowed`:
-  permission issue.
-- `network` or `service-not-allowed`:
-  browser speech service issue.
-
-This file is intentionally diagnostic-only so we can isolate the problem cleanly.
+If microphone works but transcription still ends without a transcript, the likely issue is the browser/Android SpeechRecognition service rather than the physical microphone.

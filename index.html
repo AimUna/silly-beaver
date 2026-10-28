@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f5c15c">
-<title>Silly Beaver V0.3</title>
+<title>Silly Beaver V0.4</title>
 <style>
 body{margin:0;background:#fff8ed;font-family:system-ui,-apple-system,sans-serif;color:#2f2a26}
 .app{max-width:560px;margin:auto;padding:14px}.card{background:#fff;border-radius:22px;padding:16px;margin:12px 0;box-shadow:0 10px 26px #0001}
@@ -16,106 +15,124 @@ button{font:inherit;border:0;border-radius:16px;padding:14px;font-weight:850;fon
 .small{font-size:13px;line-height:1.4;color:#746d67}
 </style>
 </head>
-<body>
-<div class="app">
-<h1>🦫 Silly Beaver V0.3</h1>
-<p class="small">Microphone diagnostics first, so we can tell if the issue is permission, audio input, or browser speech recognition.</p>
+<body><div class="app">
+<h1>🦫 Silly Beaver V0.4</h1>
+<p class="small">Fix: microphone test now releases the microphone before speech recognition starts.</p>
 
 <div class="card">
-<h3>1. Test microphone input</h3>
-<button id="micTest" class="blue">🎤 Test microphone</button>
+<h3>1. Test microphone</h3>
+<button id="micTest" class="blue">🎤 Test microphone for 4 seconds</button>
 <div id="micStatus" class="status">Not tested yet.</div>
 <div class="meter"><div id="meterBar"></div></div>
-<p class="small">Speak normally. If the green bar moves, your microphone is working.</p>
+<p class="small">The test automatically releases the microphone after 4 seconds.</p>
 </div>
 
 <div class="card">
 <h3>2. Test speech-to-text</h3>
 <button id="speechTest" class="yellow">🗣️ Test transcription</button>
 <div id="speechStatus" class="status">Not tested yet.</div>
-<p class="small">Try saying: “This is a pencil because we use it to draw.”</p>
+<p class="small">Wait until the microphone test says “released,” then tap this and say: “This is a pencil because we use it to draw.”</p>
 </div>
 
 <div class="card">
-<h3>3. Browser support</h3>
+<h3>Browser information</h3>
 <div id="supportStatus" class="status"></div>
 </div>
 </div>
 
 <script>
-const $ = s => document.querySelector(s);
-let micStream=null, audioCtx=null, analyser=null, raf=null;
+const $=s=>document.querySelector(s);
+let micStream=null,audioCtx=null,raf=null;
 
-function updateSupport(){
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const gum = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-  $('#supportStatus').innerHTML =
-    'getUserMedia: <b>'+(gum?'available':'NOT available')+'</b><br>'+
-    'SpeechRecognition: <b>'+(SR?'available':'NOT available')+'</b><br>'+
-    'Secure context: <b>'+(window.isSecureContext?'yes':'no')+'</b>';
+function stopMic(){
+  if(raf) cancelAnimationFrame(raf);
+  if(micStream){micStream.getTracks().forEach(t=>t.stop());micStream=null;}
+  if(audioCtx){audioCtx.close().catch(()=>{});audioCtx=null;}
+  $('#meterBar').style.width='0%';
 }
-updateSupport();
+
+function support(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  $('#supportStatus').innerHTML =
+    'Secure context: <b>'+(window.isSecureContext?'yes':'no')+'</b><br>'+
+    'Microphone API: <b>'+((navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)?'available':'not available')+'</b><br>'+
+    'SpeechRecognition API: <b>'+(SR?'available':'not available')+'</b>';
+}
+support();
 
 async function testMic(){
+  stopMic();
   $('#micStatus').textContent='Requesting microphone permission…';
   try{
-    if(micStream) micStream.getTracks().forEach(t=>t.stop());
     micStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});
-    $('#micStatus').textContent='✅ Microphone permission granted. Speak now.';
     audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    const src=audioCtx.createMediaStreamSource(micStream);
-    analyser=audioCtx.createAnalyser();
+    const source=audioCtx.createMediaStreamSource(micStream);
+    const analyser=audioCtx.createAnalyser();
     analyser.fftSize=256;
-    src.connect(analyser);
+    source.connect(analyser);
     const data=new Uint8Array(analyser.frequencyBinCount);
+    const started=Date.now();
     const draw=()=>{
       analyser.getByteFrequencyData(data);
       const avg=data.reduce((a,b)=>a+b,0)/data.length;
       $('#meterBar').style.width=Math.min(100,avg*1.8)+'%';
-      raf=requestAnimationFrame(draw);
+      if(Date.now()-started<4000){
+        raf=requestAnimationFrame(draw);
+      }else{
+        stopMic();
+        $('#micStatus').textContent='✅ Microphone works and has been released. Now test transcription.';
+      }
     };
+    $('#micStatus').textContent='✅ Microphone active. Speak for 4 seconds…';
     draw();
   }catch(e){
-    $('#micStatus').textContent='❌ Microphone test failed: '+e.name+' — '+e.message;
+    stopMic();
+    $('#micStatus').textContent='❌ Microphone error: '+e.name+' — '+e.message;
   }
 }
 
 function testSpeech(){
+  stopMic(); // critical fix: make sure no getUserMedia stream owns mic
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){
-    $('#speechStatus').textContent='❌ SpeechRecognition is not available in this browser.';
+    $('#speechStatus').textContent='❌ SpeechRecognition API unavailable.';
     return;
   }
   const r=new SR();
   r.lang='en-US';
-  r.interimResults=false;
-  r.maxAlternatives=1;
+  r.interimResults=true;
+  r.maxAlternatives=3;
   r.continuous=false;
 
-  $('#speechStatus').textContent='🎤 Listening…';
-  try{r.start()}catch(e){
-    $('#speechStatus').textContent='❌ Could not start recognition: '+e.name+' — '+e.message;
-    return;
-  }
-  r.onaudiostart=()=>$('#speechStatus').textContent='🎤 Audio input started. Speak now.';
+  let gotAnything=false;
+  $('#speechStatus').textContent='🎤 Starting…';
+
+  r.onstart=()=>$('#speechStatus').textContent='🎤 Recognition started. Speak now.';
+  r.onaudiostart=()=>$('#speechStatus').textContent='🎤 Audio input started. Speak clearly.';
+  r.onsoundstart=()=>$('#speechStatus').textContent='🔊 Sound detected…';
   r.onspeechstart=()=>$('#speechStatus').textContent='🗣️ Speech detected…';
   r.onresult=e=>{
-    const t=e.results[0][0].transcript.trim();
-    $('#speechStatus').textContent='✅ Heard: “'+t+'”';
+    gotAnything=true;
+    let text='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      text+=e.results[i][0].transcript;
+    }
+    $('#speechStatus').textContent='✅ Heard: “'+text.trim()+'”';
   };
   r.onerror=e=>{
     $('#speechStatus').textContent='❌ Speech recognition error: '+e.error+(e.message?' — '+e.message:'');
   };
   r.onend=()=>{
-    const t=$('#speechStatus').textContent;
-    if(t.startsWith('🎤')||t.startsWith('🗣️')){
-      $('#speechStatus').textContent=t+' Recognition ended without a transcript.';
+    if(!gotAnything && !$('#speechStatus').textContent.startsWith('❌')){
+      $('#speechStatus').textContent+=' Recognition ended without a transcript.';
     }
   };
+  try{r.start()}catch(e){
+    $('#speechStatus').textContent='❌ Could not start: '+e.name+' — '+e.message;
+  }
 }
 
 $('#micTest').onclick=testMic;
 $('#speechTest').onclick=testSpeech;
 </script>
-</body>
-</html>
+</body></html>

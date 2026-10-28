@@ -1,13 +1,14 @@
-# Silly Beaver V0.4
+# Silly Beaver V0.5
 
-The V0.3 microphone diagnostic left its getUserMedia audio stream running.
-V0.4 automatically releases the microphone before starting browser SpeechRecognition.
+This version is the actual Beaver interaction prototype again.
 
-## Test sequence
-1. Tap Test microphone.
-2. Speak for 4 seconds.
-3. Wait for: "Microphone works and has been released."
-4. Tap Test transcription.
-5. Speak a full sentence immediately.
+Key improvements:
+- longer listening window
+- interim transcription while a child is speaking
+- waits for silence before stopping
+- retries gently if nothing is captured
+- responds to meaning/keywords, not perfect sentences
+- automatically starts listening after some Beaver questions
+- keeps the Think First / Catch the Mistake / Convince Beaver pedagogy
 
-If microphone works but transcription still ends without a transcript, the likely issue is the browser/Android SpeechRecognition service rather than the physical microphone.
+To deploy: replace your GitHub Pages `index.html` with this one.
